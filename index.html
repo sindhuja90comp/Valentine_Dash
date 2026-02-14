@@ -1,676 +1,1309 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Valentine Dash 💘</title>
-  <style>
-    :root{
-      --bg1:#1b0b16;
-      --bg2:#3a1230;
-      --panel: rgba(255,255,255,.08);
-      --text: #ffeef7;
-      --muted: rgba(255,255,255,.75);
-      --accent: #ff4d9a;
-      --accent2:#ff7bbd;
-      --danger:#ff375f;
-      --ok:#56ff9a;
-    }
-    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    body{
-      margin:0;
-      min-height:100vh;
-      background: radial-gradient(1200px 900px at 50% 20%, var(--bg2), var(--bg1));
-      color:var(--text);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-    }
-    .wrap{
-      width:min(920px, 100%);
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:14px;
-    }
-    header{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      padding:14px 16px;
-      background: var(--panel);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:16px;
-      backdrop-filter: blur(8px);
-    }
-    header h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.2px}
-    header p{margin:6px 0 0 0;color:var(--muted);font-size:13px;line-height:1.35}
-    .stats{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-      align-items:center;
-    }
-    .pill{
-      padding:8px 10px;
-      border-radius:999px;
-      background: rgba(0,0,0,.22);
-      border:1px solid rgba(255,255,255,.12);
-      font-size:12px;
-      white-space:nowrap;
-    }
-    .pill b{color:#fff}
-    .gameCard{
-      position:relative;
-      background: var(--panel);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:18px;
-      padding:12px;
-      overflow:hidden;
-      backdrop-filter: blur(8px);
-    }
-    canvas{
-      width:100%;
-      height:auto;
-      display:block;
-      border-radius:14px;
-      background:
-        radial-gradient(900px 520px at 50% 30%, rgba(255,77,154,.14), transparent 60%),
-        radial-gradient(900px 520px at 70% 70%, rgba(255,123,189,.08), transparent 60%),
-        rgba(0,0,0,.18);
-      border:1px solid rgba(255,255,255,.12);
-    }
-    .overlay{
-      position:absolute;
-      inset:12px;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      padding:18px;
-      border-radius:14px;
-      background: rgba(0,0,0,.45);
-      border:1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(10px);
-    }
-    .overlay.show{display:flex;}
-    .modal{
-      width:min(540px, 100%);
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.14);
-      border-radius:16px;
-      padding:18px 16px;
-      box-shadow: 0 12px 50px rgba(0,0,0,.45);
-    }
-    .modal h2{margin:0 0 8px 0;font-size:20px}
-    .modal p{margin:0 0 14px 0;color:var(--muted);line-height:1.4}
-    .buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-    button{
-      appearance:none;
-      border:none;
-      cursor:pointer;
-      padding:10px 14px;
-      border-radius:12px;
-      font-weight:700;
-      color:#12050e;
-      background: linear-gradient(180deg, #ff8dc7, #ff4d9a);
-      box-shadow: 0 10px 24px rgba(255,77,154,.22);
-    }
-    button.secondary{
-      color:var(--text);
-      background: rgba(255,255,255,.09);
-      border:1px solid rgba(255,255,255,.16);
-      box-shadow:none;
-    }
-    .mobileControls{
-      display:none;
-      margin-top:10px;
-      gap:10px;
-      justify-content:space-between;
-      flex-wrap:wrap;
-    }
-    .pad{
-      display:grid;
-      grid-template-columns: 56px 56px 56px;
-      grid-template-rows: 56px 56px 56px;
-      gap:8px;
-      user-select:none;
-      touch-action:none;
-    }
-    .pad button{
-      width:56px;height:56px;
-      border-radius:14px;
-      padding:0;
-      font-size:18px;
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.14);
-      color:var(--text);
-      box-shadow:none;
-    }
-    .pad button:active{transform:scale(.98)}
-    .hint{
-      color:var(--muted);
-      font-size:12px;
-      margin-top:10px;
-      text-align:center;
-    }
-    @media (max-width: 720px){
-      .mobileControls{display:flex;}
-      header{flex-direction:column;align-items:flex-start}
-      .stats{justify-content:flex-start}
-    }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <header>
-      <div>
-        <h1>Valentine Dash 💘</h1>
-        <p>
-          Collect <b>all the hearts</b> before time runs out. Avoid the thorny roses 🌹.
-          <br/>Controls: <b>WASD / Arrow Keys</b> (or on-screen buttons on mobile).
-        </p>
-      </div>
-      <div class="stats">
-        <div class="pill">Hearts: <b id="uiHearts">0</b>/<span id="uiHeartsTotal">0</span></div>
-        <div class="pill">Time: <b id="uiTime">0</b>s</div>
-        <div class="pill">Best: <b id="uiBest">—</b></div>
-      </div>
-    </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Valentine Dash 💘</title>
+    <style>
+      :root {
+        --bg1: #1b0b16;
+        --bg2: #3a1230;
+        --panel: rgba(255, 255, 255, 0.08);
+        --text: #ffeef7;
+        --muted: rgba(255, 255, 255, 0.75);
+        --accent: #ff4d9a;
+        --accent2: #ff7bbd;
+        --danger: #ff375f;
+        --ok: #56ff9a;
+      }
 
-    <div class="gameCard">
-      <canvas id="c" width="900" height="540" aria-label="Valentine Dash game canvas" role="img"></canvas>
+      * {
+        box-sizing: border-box;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial;
+      }
 
-      <div class="overlay show" id="overlay">
-        <div class="modal">
-          <h2 id="ovTitle">Ready?</h2>
-          <p id="ovText">
-            Grab hearts 💗, dodge thorns 🌹, and unlock a sweet message.
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(
+          1200px 900px at 50% 20%,
+          var(--bg2),
+          var(--bg1)
+        );
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+      }
+
+      .wrap {
+        width: min(920px, 100%);
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        background: var(--panel);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        backdrop-filter: blur(8px);
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+      }
+
+      header p {
+        margin: 6px 0 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .stats {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+      }
+
+      .pill {
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .pill b {
+        color: #fff;
+      }
+
+      .gameCard {
+        position: relative;
+        background: var(--panel);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+        padding: 12px;
+        overflow: hidden;
+        backdrop-filter: blur(8px);
+      }
+
+      canvas {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 14px;
+        background:
+          radial-gradient(
+            900px 520px at 50% 30%,
+            rgba(255, 77, 154, 0.14),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 520px at 70% 70%,
+            rgba(255, 123, 189, 0.08),
+            transparent 60%
+          ),
+          rgba(0, 0, 0, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 12px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 18px;
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(10px);
+      }
+
+      .overlay.show {
+        display: flex;
+      }
+
+      .modal {
+        width: min(540px, 100%);
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 16px;
+        padding: 18px 16px;
+        box-shadow: 0 12px 50px rgba(0, 0, 0, 0.45);
+      }
+
+      .modal h2 {
+        margin: 0 0 8px 0;
+        font-size: 20px;
+      }
+
+      .modal p {
+        margin: 0 0 14px 0;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      .buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      button {
+        appearance: none;
+        border: none;
+        cursor: pointer;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        color: #12050e;
+        background: linear-gradient(180deg, #ff8dc7, #ff4d9a);
+        box-shadow: 0 10px 24px rgba(255, 77, 154, 0.22);
+      }
+
+      button.secondary {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.09);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        box-shadow: none;
+      }
+
+      .mobileControls {
+        display: none;
+        margin-top: 10px;
+        gap: 10px;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      .pad {
+        display: grid;
+        grid-template-columns: 56px 56px 56px;
+        grid-template-rows: 56px 56px 56px;
+        gap: 8px;
+        user-select: none;
+        touch-action: none;
+      }
+
+      .pad button {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        padding: 0;
+        font-size: 18px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: var(--text);
+        box-shadow: none;
+      }
+
+      .pad button:active {
+        transform: scale(0.98);
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 10px;
+        text-align: center;
+      }
+
+      @media (max-width: 720px) {
+        .mobileControls {
+          display: flex;
+        }
+
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .stats {
+          justify-content: flex-start;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1>Valentine Dash 💘</h1>
+          <p>
+            Collect <b>all the hearts</b> before time runs out. Avoid the thorny
+            roses 🌹. <br />Controls: <b>WASD / Arrow Keys</b> (or on-screen
+            buttons on mobile).
           </p>
-          <div class="buttons">
-            <button id="btnStart">Start</button>
-            <button class="secondary" id="btnHow">How to play</button>
+        </div>
+        <div class="stats">
+          <div class="pill">
+            Hearts: <b id="uiHearts">0</b>/<span id="uiHeartsTotal">0</span>
+          </div>
+          <div class="pill">Time: <b id="uiTime">0</b>s</div>
+          <div class="pill">Best: <b id="uiBest">—</b></div>
+        </div>
+      </header>
+
+      <div class="gameCard">
+        <canvas
+          id="c"
+          width="900"
+          height="540"
+          aria-label="Valentine Dash game canvas"
+          role="img"
+        ></canvas>
+
+        <div class="overlay show" id="overlay">
+          <div class="modal">
+            <h2 id="ovTitle">Ready?</h2>
+            <p id="ovText">
+              Grab hearts 💗, dodge thorns 🌹, and unlock a sweet message.
+            </p>
+            <div class="buttons">
+              <button id="btnStart">Start</button>
+              <button class="secondary" id="btnHow">How to play</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="mobileControls" aria-hidden="false">
-        <div class="pad" id="pad">
-          <span></span>
-          <button data-dir="up">▲</button>
-          <span></span>
-          <button data-dir="left">◀</button>
-          <button data-dir="down">▼</button>
-          <button data-dir="right">▶</button>
-          <span></span><span></span><span></span>
+        <div class="mobileControls" aria-hidden="false">
+          <div class="pad" id="pad">
+            <span></span>
+            <button data-dir="up">▲</button>
+            <span></span>
+            <button data-dir="left">◀</button>
+            <button data-dir="down">▼</button>
+            <button data-dir="right">▶</button>
+            <span></span><span></span><span></span>
+          </div>
+          <div
+            style="
+              display: flex;
+              gap: 10px;
+              align-items: flex-start;
+              flex-wrap: wrap;
+            "
+          >
+            <button class="secondary" id="btnRestart">Restart</button>
+            <button class="secondary" id="btnMute">Sound: On</button>
+          </div>
         </div>
-        <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
-          <button class="secondary" id="btnRestart">Restart</button>
-          <button class="secondary" id="btnMute">Sound: On</button>
-        </div>
-      </div>
 
-      <div class="hint">
-        Tip: You can personalize the win message near the top of the script (search for <b>WIN_MESSAGE</b>).
+        <div class="hint">
+          Tip: You can personalize the win message near the top of the script
+          (search for <b>WIN_MESSAGE</b>).
+        </div>
       </div>
     </div>
-  </div>
 
-<script>
-(() => {
-  // =========================
-  // PERSONALIZE THIS 💌
-  // =========================
-  const WIN_MESSAGE =
-    "Happy Valentine’s Day! 💘\n\nIf you’re reading this, you collected every heart — just like you collect the best parts of my day.";
-  const SIGNATURE = "— From: [Your Name]"; // change or remove
-  const SHARE_TEXT = "I just beat Valentine Dash 💘";
+    <script>
+      (() => {
+        // =========================
+        // PERSONALIZE THIS 💌
+        // =========================
+        const WIN_MESSAGE =
+          "Happy Valentine’s Day! 💘\n\nIf you’re reading this, you collected every heart — just like you collect the best parts of my day.";
+        const SIGNATURE = "— From: [Your Name]"; // change or remove
+        const SHARE_TEXT = "I just beat Valentine Dash 💘";
 
-  // =========================
-  // GAME CONFIG
-  // =========================
-  const canvas = document.getElementById("c");
-  const ctx = canvas.getContext("2d");
+        // =========================
+        // GAME CONFIG
+        // =========================
+        const canvas = document.getElementById("c");
+        const ctx = canvas.getContext("2d");
 
-  const uiHearts = document.getElementById("uiHearts");
-  const uiHeartsTotal = document.getElementById("uiHeartsTotal");
-  const uiTime = document.getElementById("uiTime");
-  const uiBest = document.getElementById("uiBest");
+        const uiHearts = document.getElementById("uiHearts");
+        const uiHeartsTotal = document.getElementById("uiHeartsTotal");
+        const uiTime = document.getElementById("uiTime");
+        const uiBest = document.getElementById("uiBest");
 
-  const overlay = document.getElementById("overlay");
-  const ovTitle = document.getElementById("ovTitle");
-  const ovText = document.getElementById("ovText");
+        const overlay = document.getElementById("overlay");
+        const ovTitle = document.getElementById("ovTitle");
+        const ovText = document.getElementById("ovText");
 
-  const btnStart = document.getElementById("btnStart");
-  const btnHow = document.getElementById("btnHow");
-  const btnRestart = document.getElementById("btnRestart");
-  const btnMute = document.getElementById("btnMute");
+        const btnStart = document.getElementById("btnStart");
+        const btnHow = document.getElementById("btnHow");
+        const btnRestart = document.getElementById("btnRestart");
+        const btnMute = document.getElementById("btnMute");
 
-  const W = canvas.width, H = canvas.height;
+        const W = canvas.width,
+          H = canvas.height;
 
-  const cfg = {
-    hearts: 12,
-    thorns: 8,
-    timeLimit: 40,        // seconds
-    playerSpeed: 285,     // px/s
-    thornSpeed: 130,      // px/s base
-    invuln: 0.85          // seconds after hit
-  };
+        const cfg = {
+          hearts: 12,
+          thorns: 8,
+          timeLimit: 40, // seconds
+          playerSpeed: 285, // px/s
+          thornSpeed: 130, // px/s base
+          invuln: 0.85, // seconds after hit
+        };
 
-  // =========================
-  // AUDIO (tiny synth)
-  // =========================
-  let audioCtx = null;
-  let soundOn = true;
+        // =========================
+        // AUDIO (tiny synth)
+        // =========================
+        let audioCtx = null;
+        let soundOn = true;
 
-  function beep(freq=440, dur=0.08, type="sine", gain=0.05){
-    if(!soundOn) return;
-    try{
-      audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.type = type;
-      o.frequency.value = freq;
-      g.gain.value = gain;
-      o.connect(g);
-      g.connect(audioCtx.destination);
-      o.start();
-      o.stop(audioCtx.currentTime + dur);
-    }catch(_){}
-  }
+        const applause = new Audio(
+          "https://assets.mixkit.co/sfx/preview/mixkit-small-group-cheer-and-applause-518.mp3",
+        );
+        applause.volume = 0.6;
 
-  // =========================
-  // STATE
-  // =========================
-  const keys = new Set();
-  let running = false;
-  let last = 0;
-  let elapsed = 0;
-  let heartsCollected = 0;
-  let bestTime = Number(localStorage.getItem("vd_best") || "0"); // in seconds, 0 means none
-
-  uiBest.textContent = bestTime ? (bestTime.toFixed(1) + "s") : "—";
-
-  function rand(min, max){ return Math.random() * (max-min) + min; }
-  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-  function dist2(ax, ay, bx, by){ const dx=ax-bx, dy=ay-by; return dx*dx + dy*dy; }
-
-  const player = {
-    x: W*0.2, y: H*0.55, r: 18,
-    vx: 0, vy: 0,
-    hitTimer: 0
-  };
-
-  /** entities */
-  let hearts = [];
-  let thorns = [];
-
-  // =========================
-  // SPAWN
-  // =========================
-  function nonOverlappingSpawn(r, avoidList, tries=500){
-    for(let i=0;i<tries;i++){
-      const x = rand(40, W-40);
-      const y = rand(60, H-40);
-      let ok = true;
-      for(const a of avoidList){
-        const rr = (a.r ?? 18) + r + 10;
-        if(dist2(x,y,a.x,a.y) < rr*rr){ ok=false; break; }
-      }
-      if(ok) return {x,y};
-    }
-    return {x: rand(40, W-40), y: rand(60, H-40)};
-  }
-
-  function resetWorld(){
-    elapsed = 0;
-    heartsCollected = 0;
-    player.x = W*0.2; player.y = H*0.55;
-    player.hitTimer = 0;
-
-    hearts = [];
-    thorns = [];
-
-    // spawn hearts
-    const avoid = [{x:player.x,y:player.y,r:player.r}];
-    for(let i=0;i<cfg.hearts;i++){
-      const p = nonOverlappingSpawn(14, avoid);
-      hearts.push({x:p.x,y:p.y,r:14, taken:false, bob:rand(0,Math.PI*2)});
-      avoid.push({x:p.x,y:p.y,r:18});
-    }
-
-    // spawn thorns
-    for(let i=0;i<cfg.thorns;i++){
-      const p = nonOverlappingSpawn(18, avoid);
-      const a = rand(0, Math.PI*2);
-      thorns.push({
-        x:p.x,y:p.y,r:18,
-        vx: Math.cos(a) * rand(cfg.thornSpeed*0.7, cfg.thornSpeed*1.2),
-        vy: Math.sin(a) * rand(cfg.thornSpeed*0.7, cfg.thornSpeed*1.2)
-      });
-      avoid.push({x:p.x,y:p.y,r:28});
-    }
-
-    uiHeartsTotal.textContent = cfg.hearts;
-    uiHearts.textContent = "0";
-    uiTime.textContent = cfg.timeLimit.toString();
-  }
-
-  // =========================
-  // INPUT
-  // =========================
-  window.addEventListener("keydown", (e) => {
-    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","w","a","s","d","W","A","S","D"," "].includes(e.key)) e.preventDefault();
-    keys.add(e.key);
-    if(e.key === " " && !running) start();
-  }, {passive:false});
-
-  window.addEventListener("keyup", (e) => keys.delete(e.key));
-
-  // mobile pad
-  const pad = document.getElementById("pad");
-  const padState = {up:false,down:false,left:false,right:false};
-
-  function setPad(dir, v){ padState[dir]=v; }
-
-  function bindPadButton(btn){
-    const dir = btn.dataset.dir;
-    const down = (e)=>{ e.preventDefault(); setPad(dir,true); };
-    const up = (e)=>{ e.preventDefault(); setPad(dir,false); };
-    btn.addEventListener("pointerdown", down);
-    btn.addEventListener("pointerup", up);
-    btn.addEventListener("pointercancel", up);
-    btn.addEventListener("pointerleave", up);
-  }
-  [...pad.querySelectorAll("button[data-dir]")].forEach(bindPadButton);
-
-  // Buttons
-  btnStart.onclick = () => start();
-  btnRestart.onclick = () => { endOverlay(); start(); };
-  btnHow.onclick = () => {
-    ovTitle.textContent = "How to play";
-    ovText.textContent = "Move with WASD/Arrow Keys. Collect all hearts before the timer hits zero. Touch controls appear on phones. Avoid thorny roses — they cost time!";
-  };
-  btnMute.onclick = () => {
-    soundOn = !soundOn;
-    btnMute.textContent = "Sound: " + (soundOn ? "On" : "Off");
-    if(soundOn) beep(660,0.06,"sine",0.04);
-  };
-
-  function showOverlay(title, text, startLabel="Start"){
-    overlay.classList.add("show");
-    ovTitle.textContent = title;
-    ovText.textContent = text;
-    btnStart.textContent = startLabel;
-  }
-  function endOverlay(){ overlay.classList.remove("show"); }
-
-  // =========================
-  // GAME FLOW
-  // =========================
-  function start(){
-    resetWorld();
-    endOverlay();
-    running = true;
-    last = performance.now();
-    beep(523.25, 0.05, "triangle", 0.05);
-    requestAnimationFrame(loop);
-  }
-
-  function finishWin(){
-    running = false;
-    const timeUsed = elapsed;
-    if(!bestTime || timeUsed < bestTime){
-      bestTime = timeUsed;
-      localStorage.setItem("vd_best", bestTime.toString());
-      uiBest.textContent = bestTime.toFixed(1) + "s";
-    }
-
-    beep(784,0.06,"sine",0.06);
-    beep(988,0.08,"sine",0.06);
-
-    // share hint (optional)
-    const msg = `${WIN_MESSAGE}\n\n${SIGNATURE}`;
-    const shareHint = (navigator.share)
-      ? "\n\nTip: Use your browser’s share button to send this link."
-      : "\n\nTip: Copy the page link and send it.";
-
-    showOverlay("You did it! 💘", msg + shareHint, "Play again");
-
-    // try to set nice share title if available
-    document.title = "Valentine Dash 💘 (Winner!)";
-  }
-
-  function finishLose(){
-    running = false;
-    beep(220,0.10,"sawtooth",0.05);
-    showOverlay("Time’s up 💔", "One more try — the hearts are waiting!", "Try again");
-  }
-
-  // =========================
-  // UPDATE + DRAW
-  // =========================
-  function loop(t){
-    if(!running) return;
-    const dt = Math.min(0.033, (t-last)/1000);
-    last = t;
-    elapsed += dt;
-
-    // timer
-    const timeLeft = Math.max(0, cfg.timeLimit - elapsed);
-    uiTime.textContent = Math.ceil(timeLeft).toString();
-    if(timeLeft <= 0){ finishLose(); return; }
-
-    // player input
-    let ix = 0, iy = 0;
-    const up = keys.has("ArrowUp") || keys.has("w") || keys.has("W") || padState.up;
-    const down = keys.has("ArrowDown") || keys.has("s") || keys.has("S") || padState.down;
-    const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A") || padState.left;
-    const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D") || padState.right;
-
-    if(up) iy -= 1;
-    if(down) iy += 1;
-    if(left) ix -= 1;
-    if(right) ix += 1;
-
-    const len = Math.hypot(ix, iy) || 1;
-    ix /= len; iy /= len;
-
-    player.vx = ix * cfg.playerSpeed;
-    player.vy = iy * cfg.playerSpeed;
-
-    player.x += player.vx * dt;
-    player.y += player.vy * dt;
-
-    // bounds
-    player.x = clamp(player.x, player.r+10, W-player.r-10);
-    player.y = clamp(player.y, player.r+10, H-player.r-10);
-
-    // thorns movement + bounce
-    for(const th of thorns){
-      th.x += th.vx * dt;
-      th.y += th.vy * dt;
-      if(th.x < th.r+10){ th.x = th.r+10; th.vx *= -1; }
-      if(th.x > W-th.r-10){ th.x = W-th.r-10; th.vx *= -1; }
-      if(th.y < th.r+10){ th.y = th.r+10; th.vy *= -1; }
-      if(th.y > H-th.r-10){ th.y = H-th.r-10; th.vy *= -1; }
-    }
-
-    // collisions
-    if(player.hitTimer > 0) player.hitTimer -= dt;
-
-    // hearts
-    for(const h of hearts){
-      h.bob += dt * 2.2;
-      if(h.taken) continue;
-      const rr = player.r + h.r;
-      if(dist2(player.x, player.y, h.x, h.y) < rr*rr){
-        h.taken = true;
-        heartsCollected++;
-        uiHearts.textContent = heartsCollected.toString();
-        beep(880,0.05,"triangle",0.05);
-        if(heartsCollected >= cfg.hearts){
-          finishWin();
-          return;
+        function beep(freq = 440, dur = 0.08, type = "sine", gain = 0.05) {
+          if (!soundOn) return;
+          try {
+            audioCtx ||= new (
+              window.AudioContext || window.webkitAudioContext
+            )();
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = type;
+            o.frequency.value = freq;
+            g.gain.value = gain;
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.start();
+            o.stop(audioCtx.currentTime + dur);
+          } catch (_) {}
         }
-      }
-    }
 
-    // thorns hit: subtract time (punishment)
-    if(player.hitTimer <= 0){
-      for(const th of thorns){
-        const rr = player.r + th.r;
-        if(dist2(player.x, player.y, th.x, th.y) < rr*rr){
-          player.hitTimer = cfg.invuln;
-          // penalize: add time elapsed (equivalent to reducing time left)
-          elapsed += 3.0; // lose ~3 seconds
-          beep(180,0.08,"square",0.06);
-          break;
+        function clap() {
+          if (!soundOn) return;
+          try {
+            audioCtx ||= new (
+              window.AudioContext || window.webkitAudioContext
+            )();
+            if (audioCtx.state === "suspended") audioCtx.resume();
+
+            const now = audioCtx.currentTime;
+
+            // Master chain: filters -> compressor -> output
+            const bp = audioCtx.createBiquadFilter();
+            bp.type = "bandpass";
+            bp.frequency.setValueAtTime(1800, now);
+            bp.Q.setValueAtTime(0.8, now);
+
+            const hp = audioCtx.createBiquadFilter();
+            hp.type = "highpass";
+            hp.frequency.setValueAtTime(700, now);
+
+            const comp = audioCtx.createDynamicsCompressor();
+            comp.threshold.setValueAtTime(-24, now);
+            comp.knee.setValueAtTime(30, now);
+            comp.ratio.setValueAtTime(12, now);
+            comp.attack.setValueAtTime(0.003, now);
+            comp.release.setValueAtTime(0.12, now);
+
+            const out = audioCtx.createGain();
+            out.gain.setValueAtTime(0.9, now);
+
+            bp.connect(hp);
+            hp.connect(comp);
+            comp.connect(out);
+            out.connect(audioCtx.destination);
+
+            // Helper: one short burst of filtered noise
+            function burst(t, dur, amp) {
+              const sr = audioCtx.sampleRate;
+              const len = Math.max(1, Math.floor(sr * dur));
+              const buffer = audioCtx.createBuffer(1, len, sr);
+              const data = buffer.getChannelData(0);
+
+              // noisier front, slightly decaying tail
+              for (let i = 0; i < len; i++) {
+                const x = Math.random() * 2 - 1;
+                const decay = 1 - i / len;
+                data[i] = x * (0.9 * decay + 0.1);
+              }
+
+              const src = audioCtx.createBufferSource();
+              src.buffer = buffer;
+
+              const g = audioCtx.createGain();
+              g.gain.setValueAtTime(0.0001, t);
+              g.gain.exponentialRampToValueAtTime(amp, t + 0.003); // snap
+              g.gain.exponentialRampToValueAtTime(0.0001, t + dur); // quick fade
+
+              src.connect(g);
+              g.connect(bp);
+
+              src.start(t);
+              src.stop(t + dur + 0.01);
+            }
+
+            // Multi-hit clap (gives that "clap-clap" transient feel)
+            burst(now + 0.0, 0.03, 0.85);
+            burst(now + 0.018, 0.04, 0.7);
+            burst(now + 0.038, 0.055, 0.55);
+
+            // Tiny “room” tail
+            burst(now + 0.075, 0.09, 0.18);
+          } catch (_) {}
         }
-      }
-    }
 
-    draw(timeLeft);
-    requestAnimationFrame(loop);
-  }
+        function continuousClaps(duration = 0.6) {
+          // seconds
+          if (!soundOn) return;
+          audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === "suspended") audioCtx.resume();
 
-  function draw(timeLeft){
-    ctx.clearRect(0,0,W,H);
+          const now = audioCtx.currentTime;
 
-    // subtle sparkles background
-    for(let i=0;i<18;i++){
-      const x = (i*97 + (elapsed*40)) % (W+120) - 60;
-      const y = (i*53 + (elapsed*28)) % (H+120) - 60;
-      const a = 0.10 + 0.08*Math.sin(elapsed*1.5 + i);
-      ctx.fillStyle = `rgba(255,255,255,${a})`;
-      ctx.beginPath();
-      ctx.arc(x, y, 1.6, 0, Math.PI*2);
-      ctx.fill();
-    }
+          // Extended Victory Fanfare with harmonies and dynamics
+          const melodyNotes = [
+            { freq: 261.63, dur: 0.15 }, // C4
+            { freq: 293.66, dur: 0.15 }, // D4
+            { freq: 329.63, dur: 0.15 }, // E4
+            { freq: 392.0, dur: 0.15 }, // G4
+            { freq: 440.0, dur: 0.2 }, // A4
+            { freq: 523.25, dur: 0.2 }, // C5
+            { freq: 587.33, dur: 0.25 }, // D5
+            { freq: 659.25, dur: 0.3 }, // E5 - hold longer at peak
+            { freq: 740.0, dur: 0.3 }, // F#5
+            { freq: 659.25, dur: 0.25 }, // E5
+            { freq: 587.33, dur: 0.2 }, // D5
+            { freq: 523.25, dur: 0.2 }, // C5
+            { freq: 440.0, dur: 0.15 }, // A4
+            { freq: 392.0, dur: 0.15 }, // G4
+            { freq: 329.63, dur: 0.15 }, // E4
+            { freq: 293.66, dur: 0.15 }, // D4
+            { freq: 261.63, dur: 0.2 }, // C4 - resolution
+          ];
 
-    // arena frame
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.lineWidth = 3;
-    roundRect(ctx, 10, 10, W-20, H-20, 18);
-    ctx.stroke();
+          let melodyTime = now;
 
-    // hearts
-    for(const h of hearts){
-      if(h.taken) continue;
-      const bobY = Math.sin(h.bob) * 4;
-      drawHeart(h.x, h.y + bobY, h.r, "#ff4d9a", "#ffd1e8");
-    }
+          // Play main melody with harmonies
+          for (let note of melodyNotes) {
+            // Main melody line
+            const mainOsc = audioCtx.createOscillator();
+            mainOsc.type = "sine";
+            mainOsc.frequency.setValueAtTime(note.freq, melodyTime);
 
-    // thorns
-    for(const th of thorns){
-      drawThorn(th.x, th.y, th.r);
-    }
+            const mainGain = audioCtx.createGain();
+            mainGain.gain.setValueAtTime(0, melodyTime);
+            mainGain.gain.exponentialRampToValueAtTime(0.35, melodyTime + 0.04);
+            mainGain.gain.exponentialRampToValueAtTime(
+              0.15,
+              melodyTime + note.dur,
+            );
 
-    // player (a cute circle with a tiny heart)
-    const inv = player.hitTimer > 0 ? 0.45 + 0.35*Math.sin(elapsed*18) : 1;
-    ctx.globalAlpha = inv;
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.r, 0, Math.PI*2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
+            mainOsc.connect(mainGain);
+            mainGain.connect(audioCtx.destination);
+            mainOsc.start(melodyTime);
+            mainOsc.stop(melodyTime + note.dur);
 
-    // eyes
-    ctx.fillStyle = "rgba(20,10,18,0.85)";
-    ctx.beginPath();
-    ctx.arc(player.x-6, player.y-3, 2.2, 0, Math.PI*2);
-    ctx.arc(player.x+6, player.y-3, 2.2, 0, Math.PI*2);
-    ctx.fill();
+            // Harmonic layer - third above main note
+            const harmonyOsc = audioCtx.createOscillator();
+            harmonyOsc.type = "sine";
+            harmonyOsc.frequency.setValueAtTime(note.freq * 1.25, melodyTime); // major third
 
-    // tiny heart on chest
-    drawHeart(player.x, player.y+10, 6, "#ff4d9a", "#ffd1e8");
+            const harmonyGain = audioCtx.createGain();
+            harmonyGain.gain.setValueAtTime(0, melodyTime);
+            harmonyGain.gain.exponentialRampToValueAtTime(
+              0.18,
+              melodyTime + 0.04,
+            );
+            harmonyGain.gain.exponentialRampToValueAtTime(
+              0.08,
+              melodyTime + note.dur,
+            );
 
-    // HUD bar (time pressure)
-    const barW = W-44, barH = 10;
-    const x = 22, y = 26;
-    ctx.fillStyle = "rgba(255,255,255,0.10)";
-    roundRect(ctx, x, y, barW, barH, 999);
-    ctx.fill();
-    const ratio = clamp(timeLeft / cfg.timeLimit, 0, 1);
-    ctx.fillStyle = ratio > 0.35 ? "rgba(86,255,154,0.75)" : "rgba(255,55,95,0.80)";
-    roundRect(ctx, x, y, barW*ratio, barH, 999);
-    ctx.fill();
-  }
+            harmonyOsc.connect(harmonyGain);
+            harmonyGain.connect(audioCtx.destination);
+            harmonyOsc.start(melodyTime);
+            harmonyOsc.stop(melodyTime + note.dur);
 
-  // =========================
-  // DRAW HELPERS
-  // =========================
-  function roundRect(ctx, x, y, w, h, r){
-    const rr = Math.min(r, w/2, h/2);
-    ctx.beginPath();
-    ctx.moveTo(x+rr, y);
-    ctx.arcTo(x+w, y, x+w, y+h, rr);
-    ctx.arcTo(x+w, y+h, x, y+h, rr);
-    ctx.arcTo(x, y+h, x, y, rr);
-    ctx.arcTo(x, y, x+w, y, rr);
-    ctx.closePath();
-  }
+            // Bass note - lower octave for depth
+            if (note.dur > 0.15) {
+              const bassOsc = audioCtx.createOscillator();
+              bassOsc.type = "sine";
+              bassOsc.frequency.setValueAtTime(note.freq * 0.5, melodyTime);
 
-  function drawHeart(cx, cy, size, fill, shine){
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.beginPath();
-    const s = size;
-    ctx.moveTo(0, s*0.35);
-    ctx.bezierCurveTo(s*0.9, -s*0.2, s*0.8, -s*1.25, 0, -s*0.65);
-    ctx.bezierCurveTo(-s*0.8, -s*1.25, -s*0.9, -s*0.2, 0, s*0.35);
-    ctx.closePath();
-    ctx.fillStyle = fill;
-    ctx.fill();
-    // highlight
-    ctx.globalAlpha = 0.55;
-    ctx.beginPath();
-    ctx.ellipse(-s*0.25, -s*0.35, s*0.28, s*0.18, -0.6, 0, Math.PI*2);
-    ctx.fillStyle = shine;
-    ctx.fill();
-    ctx.restore();
-    ctx.globalAlpha = 1;
-  }
+              const bassGain = audioCtx.createGain();
+              bassGain.gain.setValueAtTime(0, melodyTime);
+              bassGain.gain.exponentialRampToValueAtTime(
+                0.15,
+                melodyTime + 0.05,
+              );
+              bassGain.gain.exponentialRampToValueAtTime(
+                0.05,
+                melodyTime + note.dur,
+              );
 
-  function drawThorn(x, y, r){
-    // stylized thorny rose blob
-    ctx.save();
-    ctx.translate(x,y);
+              bassOsc.connect(bassGain);
+              bassGain.connect(audioCtx.destination);
+              bassOsc.start(melodyTime);
+              bassOsc.stop(melodyTime + note.dur);
+            }
 
-    // base
-    ctx.fillStyle = "rgba(255,55,95,0.22)";
-    ctx.beginPath();
-    ctx.arc(0,0,r+6,0,Math.PI*2);
-    ctx.fill();
+            melodyTime += note.dur;
+          }
 
-    // petals/spikes
-    ctx.fillStyle = "rgba(255,55,95,0.75)";
-    for(let i=0;i<8;i++){
-      const a = i*(Math.PI*2/8) + elapsed*0.25;
-      ctx.beginPath();
-      ctx.moveTo(Math.cos(a)*r*0.35, Math.sin(a)*r*0.35);
-      ctx.lineTo(Math.cos(a+0.18)*r*1.2, Math.sin(a+0.18)*r*1.2);
-      ctx.lineTo(Math.cos(a-0.18)*r*1.2, Math.sin(a-0.18)*r*1.2);
-      ctx.closePath();
-      ctx.fill();
-    }
+          // Applause and cheers with crescendo
+          const totalClaps = Math.floor(duration / 0.2);
+          for (let i = 0; i < totalClaps; i++) {
+            const time = now + (i * duration) / totalClaps;
+            const clapIntensity = 0.3 + (i / totalClaps) * 0.4; // crescendo
 
-    // center
-    ctx.fillStyle = "rgba(20,10,18,0.65)";
-    ctx.beginPath();
-    ctx.arc(0,0,r*0.45,0,Math.PI*2);
-    ctx.fill();
+            try {
+              // Clap body
+              const clapOsc = audioCtx.createOscillator();
+              clapOsc.type = "sine";
+              clapOsc.frequency.setValueAtTime(280 + Math.random() * 120, time);
+              clapOsc.frequency.exponentialRampToValueAtTime(110, time + 0.06);
 
-    ctx.restore();
-  }
+              const clapGain = audioCtx.createGain();
+              clapGain.gain.setValueAtTime(0, time);
+              clapGain.gain.exponentialRampToValueAtTime(
+                0.35 * clapIntensity,
+                time + 0.002,
+              );
+              clapGain.gain.exponentialRampToValueAtTime(0.08, time + 0.06);
 
-  // =========================
-  // INITIAL SCREEN
-  // =========================
-  showOverlay("Ready? 💘", "Collect all hearts before time runs out. Avoid thorny roses — they cost time!", "Start");
-})();
-</script>
-</body>
+              clapOsc.connect(clapGain);
+              clapGain.connect(audioCtx.destination);
+              clapOsc.start(time);
+              clapOsc.stop(time + 0.08);
+
+              // Clap attack - noise
+              const sr = audioCtx.sampleRate;
+              const noiseBufLen = Math.floor(sr * 0.06);
+              const noiseBuf = audioCtx.createBuffer(1, noiseBufLen, sr);
+              const noiseData = noiseBuf.getChannelData(0);
+
+              for (let j = 0; j < noiseBufLen; j++) {
+                const envelope = Math.exp(-j / (noiseBufLen * 0.12));
+                noiseData[j] = (Math.random() * 2 - 1) * envelope;
+              }
+
+              const noiseSrc = audioCtx.createBufferSource();
+              noiseSrc.buffer = noiseBuf;
+
+              const noiseGain = audioCtx.createGain();
+              noiseGain.gain.setValueAtTime(0.3 * clapIntensity, time);
+              noiseGain.gain.exponentialRampToValueAtTime(0.03, time + 0.06);
+
+              noiseSrc.connect(noiseGain);
+              noiseGain.connect(audioCtx.destination);
+              noiseSrc.start(time);
+
+              // Multi-layered cheering tones
+              const cheerFreqs = [523.25, 587.33, 659.25, 740.0]; // C5, D5, E5, F#5
+              for (let c = 0; c < 3; c++) {
+                const cheerOsc = audioCtx.createOscillator();
+                cheerOsc.type = "sine";
+                const freq = cheerFreqs[c % cheerFreqs.length];
+                cheerOsc.frequency.setValueAtTime(freq, time + 0.05);
+                cheerOsc.frequency.exponentialRampToValueAtTime(
+                  freq * 1.08,
+                  time + 0.1,
+                );
+
+                const cheerGain = audioCtx.createGain();
+                cheerGain.gain.setValueAtTime(0, time + 0.05);
+                cheerGain.gain.exponentialRampToValueAtTime(
+                  0.18 * clapIntensity,
+                  time + 0.07,
+                );
+                cheerGain.gain.exponentialRampToValueAtTime(0.1, time + 0.14);
+
+                cheerOsc.connect(cheerGain);
+                cheerGain.connect(audioCtx.destination);
+                cheerOsc.start(time + 0.05);
+                cheerOsc.stop(time + 0.14);
+              }
+            } catch (_) {}
+          }
+        }
+
+        // =========================
+        // STATE
+        // =========================
+        const keys = new Set();
+        let running = false;
+        let last = 0;
+        let elapsed = 0;
+        let heartsCollected = 0;
+
+        let winning = false; // NEW: celebration state
+        let winFxTimer = 0; // NEW: seconds remaining for burst animation
+        let winFxBurst = []; // NEW: burst particles
+        let winFxDelayMs = 30; // NEW: requested tiny pause (10ms)
+
+        let bestTime = Number(localStorage.getItem("vd_best") || "0"); // in seconds, 0 means none
+
+        uiBest.textContent = bestTime ? bestTime.toFixed(1) + "s" : "—";
+
+        function rand(min, max) {
+          return Math.random() * (max - min) + min;
+        }
+        function clamp(v, a, b) {
+          return Math.max(a, Math.min(b, v));
+        }
+        function dist2(ax, ay, bx, by) {
+          const dx = ax - bx,
+            dy = ay - by;
+          return dx * dx + dy * dy;
+        }
+
+        const player = {
+          x: W * 0.2,
+          y: H * 0.55,
+          r: 18,
+          vx: 0,
+          vy: 0,
+          hitTimer: 0,
+        };
+
+        /** entities */
+        let hearts = [];
+        let thorns = [];
+
+        // =========================
+        // SPAWN
+        // =========================
+        function nonOverlappingSpawn(r, avoidList, tries = 500) {
+          for (let i = 0; i < tries; i++) {
+            const x = rand(40, W - 40);
+            const y = rand(60, H - 40);
+            let ok = true;
+            for (const a of avoidList) {
+              const rr = (a.r ?? 18) + r + 10;
+              if (dist2(x, y, a.x, a.y) < rr * rr) {
+                ok = false;
+                break;
+              }
+            }
+            if (ok) return { x, y };
+          }
+          return { x: rand(40, W - 40), y: rand(60, H - 40) };
+        }
+
+        function resetWorld() {
+          elapsed = 0;
+          heartsCollected = 0;
+          player.x = W * 0.2;
+          player.y = H * 0.55;
+          player.hitTimer = 0;
+
+          hearts = [];
+          thorns = [];
+
+          // spawn hearts
+          const avoid = [{ x: player.x, y: player.y, r: player.r }];
+          for (let i = 0; i < cfg.hearts; i++) {
+            const p = nonOverlappingSpawn(14, avoid);
+            hearts.push({
+              x: p.x,
+              y: p.y,
+              r: 14,
+              taken: false,
+              bob: rand(0, Math.PI * 2),
+            });
+            avoid.push({ x: p.x, y: p.y, r: 18 });
+          }
+
+          // spawn thorns
+          for (let i = 0; i < cfg.thorns; i++) {
+            const p = nonOverlappingSpawn(18, avoid);
+            const a = rand(0, Math.PI * 2);
+            thorns.push({
+              x: p.x,
+              y: p.y,
+              r: 18,
+              vx:
+                Math.cos(a) * rand(cfg.thornSpeed * 0.7, cfg.thornSpeed * 1.2),
+              vy:
+                Math.sin(a) * rand(cfg.thornSpeed * 0.7, cfg.thornSpeed * 1.2),
+            });
+            avoid.push({ x: p.x, y: p.y, r: 28 });
+          }
+
+          uiHeartsTotal.textContent = cfg.hearts;
+          uiHearts.textContent = "0";
+          uiTime.textContent = cfg.timeLimit.toString();
+        }
+
+        // =========================
+        // INPUT
+        // =========================
+        window.addEventListener(
+          "keydown",
+          (e) => {
+            if (
+              [
+                "ArrowUp",
+                "ArrowDown",
+                "ArrowLeft",
+                "ArrowRight",
+                "w",
+                "a",
+                "s",
+                "d",
+                "W",
+                "A",
+                "S",
+                "D",
+                " ",
+              ].includes(e.key)
+            )
+              e.preventDefault();
+            keys.add(e.key);
+            if (e.key === " " && !running) start();
+          },
+          { passive: false },
+        );
+
+        window.addEventListener("keyup", (e) => keys.delete(e.key));
+
+        // mobile pad
+        const pad = document.getElementById("pad");
+        const padState = { up: false, down: false, left: false, right: false };
+
+        function setPad(dir, v) {
+          padState[dir] = v;
+        }
+
+        function bindPadButton(btn) {
+          const dir = btn.dataset.dir;
+          const down = (e) => {
+            e.preventDefault();
+            setPad(dir, true);
+          };
+          const up = (e) => {
+            e.preventDefault();
+            setPad(dir, false);
+          };
+          btn.addEventListener("pointerdown", down);
+          btn.addEventListener("pointerup", up);
+          btn.addEventListener("pointercancel", up);
+          btn.addEventListener("pointerleave", up);
+        }
+        [...pad.querySelectorAll("button[data-dir]")].forEach(bindPadButton);
+
+        // Buttons
+        btnStart.onclick = () => start();
+        btnRestart.onclick = () => {
+          endOverlay();
+          start();
+        };
+        btnHow.onclick = () => {
+          ovTitle.textContent = "How to play";
+          ovText.textContent =
+            "Move with WASD/Arrow Keys. Collect all hearts before the timer hits zero. Touch controls appear on phones. Avoid thorny roses — they cost time!";
+        };
+        btnMute.onclick = () => {
+          soundOn = !soundOn;
+          btnMute.textContent = "Sound: " + (soundOn ? "On" : "Off");
+          if (soundOn) beep(660, 0.06, "sine", 0.04);
+        };
+
+        function showOverlay(title, text, startLabel = "Start") {
+          overlay.classList.add("show");
+          ovTitle.textContent = title;
+          ovText.textContent = text;
+          btnStart.textContent = startLabel;
+        }
+        function endOverlay() {
+          overlay.classList.remove("show");
+        }
+
+        // =========================
+        // GAME FLOW
+        // =========================
+        function start() {
+          resetWorld();
+          endOverlay();
+          running = true;
+          last = performance.now();
+          beep(523.25, 0.05, "triangle", 0.05);
+          requestAnimationFrame(loop);
+        }
+
+        function startWinCelebration() {
+          winning = true;
+          winFxTimer = 1.4; // longer so the shower feels satisfying
+          winFxBurst = [];
+
+          // Falling flowers/petals from the top
+          const count = 60;
+          for (let i = 0; i < count; i++) {
+            winFxBurst.push({
+              x: rand(20, W - 20),
+              y: rand(-H * 0.6, -20),
+              vx: rand(-35, 35),
+              vy: rand(60, 160),
+              life: rand(0.9, 1.6),
+              r: rand(4, 9),
+              rot: rand(0, Math.PI * 2),
+              vr: rand(-4, 4),
+              wob: rand(0, Math.PI * 2),
+              hue: rand(325, 355), // pink range
+            });
+          }
+
+          continuousClaps(1.2); // 👏 sound on win
+        }
+
+        function updateWinCelebration(dt) {
+          if (!winning) return;
+
+          winFxTimer -= dt;
+
+          for (const p of winFxBurst) {
+            p.life -= dt;
+            p.wob += dt * rand(2.0, 3.2);
+
+            // gentle side-to-side drift + gravity
+            p.vx += Math.sin(p.wob) * 8 * dt;
+            p.vy += 120 * dt;
+
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.rot += p.vr * dt;
+
+            // wrap horizontally so it keeps raining nicely
+            if (p.x < -10) p.x = W + 10;
+            if (p.x > W + 10) p.x = -10;
+          }
+
+          // remove dead or off-screen particles
+          winFxBurst = winFxBurst.filter((p) => p.life > 0 && p.y < H + 40);
+
+          if (winFxTimer <= 0) winning = false;
+        }
+
+        function drawWinCelebration() {
+          if (!winning) return;
+
+          // Title card
+          ctx.save();
+          ctx.fillStyle = "rgba(0,0,0,0.35)";
+          roundRect(ctx, W / 2 - 190, H / 2 - 78, 380, 156, 18);
+          ctx.fill();
+
+          ctx.textAlign = "center";
+          ctx.fillStyle = "rgba(255,255,255,0.96)";
+          ctx.font =
+            "900 46px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+          ctx.fillText("YOU WIN!", W / 2, H / 2 - 10);
+
+          ctx.font =
+            "700 16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+          ctx.fillStyle = "rgba(255,255,255,0.80)";
+          ctx.fillText("🌸 petals for you 🌸", W / 2, H / 2 + 22);
+          ctx.restore();
+
+          // Falling flowers on top of everything
+          for (const p of winFxBurst) {
+            const a = Math.max(0, Math.min(1, p.life / 1.6));
+            ctx.globalAlpha = 0.9 * a;
+
+            // tiny 5-petal flower
+            drawFlower(p.x, p.y, p.r, p.rot, p.hue);
+          }
+          ctx.globalAlpha = 1;
+        }
+
+        function drawFlower(x, y, r, rot, hue) {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(rot);
+
+          // petals
+          for (let i = 0; i < 5; i++) {
+            ctx.rotate((Math.PI * 2) / 5);
+            ctx.fillStyle = `hsla(${hue}, 85%, 70%, 0.95)`;
+            ctx.beginPath();
+            ctx.ellipse(r * 1.2, 0, r * 0.9, r * 0.55, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // center
+          ctx.fillStyle = "rgba(255, 244, 180, 0.95)";
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 0.55, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+
+        function finishWin() {
+          running = false;
+          const timeUsed = elapsed;
+          if (!bestTime || timeUsed < bestTime) {
+            bestTime = timeUsed;
+            localStorage.setItem("vd_best", bestTime.toString());
+            uiBest.textContent = bestTime.toFixed(1) + "s";
+          }
+
+          beep(784, 0.06, "sine", 0.06);
+          beep(988, 0.08, "sine", 0.06);
+
+          // share hint (optional)
+          const msg = `${WIN_MESSAGE}\n\n${SIGNATURE}`;
+          const shareHint = navigator.share
+            ? "\n\nTip: Use your browser’s share button to send this link."
+            : "\n\nTip: Copy the page link and send it.";
+
+          showOverlay("You did it! 💘", msg + shareHint, "Play again");
+
+          // try to set nice share title if available
+          document.title = "Valentine Dash 💘 (Winner!)";
+        }
+
+        function finishLose() {
+          running = false;
+          beep(220, 0.1, "sawtooth", 0.05);
+          showOverlay(
+            "Time’s up 💔",
+            "One more try — the hearts are waiting!",
+            "Try again",
+          );
+        }
+
+        // =========================
+        // UPDATE + DRAW
+        // =========================
+        function loop(t) {
+          if (!running) return;
+          const dt = Math.min(0.033, (t - last) / 1000);
+          last = t;
+          elapsed += dt;
+
+          // timer
+          const timeLeft = Math.max(0, cfg.timeLimit - elapsed);
+          uiTime.textContent = Math.ceil(timeLeft).toString();
+          if (timeLeft <= 0) {
+            finishLose();
+            return;
+          }
+
+          // player input
+          let ix = 0,
+            iy = 0;
+          const up =
+            keys.has("ArrowUp") ||
+            keys.has("w") ||
+            keys.has("W") ||
+            padState.up;
+          const down =
+            keys.has("ArrowDown") ||
+            keys.has("s") ||
+            keys.has("S") ||
+            padState.down;
+          const left =
+            keys.has("ArrowLeft") ||
+            keys.has("a") ||
+            keys.has("A") ||
+            padState.left;
+          const right =
+            keys.has("ArrowRight") ||
+            keys.has("d") ||
+            keys.has("D") ||
+            padState.right;
+
+          if (up) iy -= 1;
+          if (down) iy += 1;
+          if (left) ix -= 1;
+          if (right) ix += 1;
+
+          const len = Math.hypot(ix, iy) || 1;
+          ix /= len;
+          iy /= len;
+
+          player.vx = ix * cfg.playerSpeed;
+          player.vy = iy * cfg.playerSpeed;
+
+          player.x += player.vx * dt;
+          player.y += player.vy * dt;
+
+          // bounds
+          player.x = clamp(player.x, player.r + 10, W - player.r - 10);
+          player.y = clamp(player.y, player.r + 10, H - player.r - 10);
+
+          // thorns movement + bounce
+          for (const th of thorns) {
+            th.x += th.vx * dt;
+            th.y += th.vy * dt;
+            if (th.x < th.r + 10) {
+              th.x = th.r + 10;
+              th.vx *= -1;
+            }
+            if (th.x > W - th.r - 10) {
+              th.x = W - th.r - 10;
+              th.vx *= -1;
+            }
+            if (th.y < th.r + 10) {
+              th.y = th.r + 10;
+              th.vy *= -1;
+            }
+            if (th.y > H - th.r - 10) {
+              th.y = H - th.r - 10;
+              th.vy *= -1;
+            }
+          }
+
+          // collisions
+          if (player.hitTimer > 0) player.hitTimer -= dt;
+
+          // hearts
+          for (const h of hearts) {
+            h.bob += dt * 2.2;
+            if (h.taken) continue;
+            const rr = player.r + h.r;
+            if (dist2(player.x, player.y, h.x, h.y) < rr * rr) {
+              h.taken = true;
+              heartsCollected++;
+              uiHearts.textContent = heartsCollected.toString();
+              beep(880, 0.05, "triangle", 0.05);
+              if (heartsCollected >= cfg.hearts) {
+                // Let the last heart "feel" collected, then celebrate, then show message
+                running = false; // stop normal gameplay loop
+                setTimeout(() => {
+                  startWinCelebration();
+                  // run a short celebration loop, then show overlay
+                  const startT = performance.now();
+                  function fxLoop(now) {
+                    const dt = Math.min(
+                      0.033,
+                      (now - (fxLoop._last || now)) / 1000,
+                    );
+                    fxLoop._last = now;
+
+                    // keep drawing the game frame + celebration
+                    draw(Math.max(0, cfg.timeLimit - elapsed));
+                    updateWinCelebration(dt);
+                    drawWinCelebration();
+
+                    if (winning) {
+                      requestAnimationFrame(fxLoop);
+                    } else {
+                      finishWin(); // now show the win message overlay
+                    }
+                  }
+                  requestAnimationFrame(fxLoop);
+                }, winFxDelayMs); // requested 10ms pause
+
+                return;
+              }
+            }
+          }
+
+          // thorns hit: subtract time (punishment)
+          if (player.hitTimer <= 0) {
+            for (const th of thorns) {
+              const rr = player.r + th.r;
+              if (dist2(player.x, player.y, th.x, th.y) < rr * rr) {
+                player.hitTimer = cfg.invuln;
+                // penalize: add time elapsed (equivalent to reducing time left)
+                elapsed += 3.0; // lose ~3 seconds
+                beep(180, 0.08, "square", 0.06);
+                break;
+              }
+            }
+          }
+
+          draw(timeLeft);
+          requestAnimationFrame(loop);
+        }
+
+        function draw(timeLeft) {
+          ctx.clearRect(0, 0, W, H);
+
+          // subtle sparkles background
+          for (let i = 0; i < 18; i++) {
+            const x = ((i * 97 + elapsed * 40) % (W + 120)) - 60;
+            const y = ((i * 53 + elapsed * 28) % (H + 120)) - 60;
+            const a = 0.1 + 0.08 * Math.sin(elapsed * 1.5 + i);
+            ctx.fillStyle = `rgba(255,255,255,${a})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 1.6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          drawWinCelebration();
+
+          // arena frame
+          ctx.strokeStyle = "rgba(255,255,255,0.12)";
+          ctx.lineWidth = 3;
+          roundRect(ctx, 10, 10, W - 20, H - 20, 18);
+          ctx.stroke();
+
+          // hearts
+          for (const h of hearts) {
+            if (h.taken) continue;
+            const bobY = Math.sin(h.bob) * 4;
+            drawHeart(h.x, h.y + bobY, h.r, "#ff4d9a", "#ffd1e8");
+          }
+
+          // thorns
+          for (const th of thorns) {
+            drawThorn(th.x, th.y, th.r);
+          }
+
+          // player (a cute circle with a tiny heart)
+          const inv =
+            player.hitTimer > 0 ? 0.45 + 0.35 * Math.sin(elapsed * 18) : 1;
+          ctx.globalAlpha = inv;
+          ctx.fillStyle = "rgba(255,255,255,0.92)";
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+
+          // eyes
+          ctx.fillStyle = "rgba(20,10,18,0.85)";
+          ctx.beginPath();
+          ctx.arc(player.x - 6, player.y - 3, 2.2, 0, Math.PI * 2);
+          ctx.arc(player.x + 6, player.y - 3, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          // tiny heart on chest
+          drawHeart(player.x, player.y + 10, 6, "#ff4d9a", "#ffd1e8");
+
+          // HUD bar (time pressure)
+          const barW = W - 44,
+            barH = 10;
+          const x = 22,
+            y = 26;
+          ctx.fillStyle = "rgba(255,255,255,0.10)";
+          roundRect(ctx, x, y, barW, barH, 999);
+          ctx.fill();
+          const ratio = clamp(timeLeft / cfg.timeLimit, 0, 1);
+          ctx.fillStyle =
+            ratio > 0.35 ? "rgba(86,255,154,0.75)" : "rgba(255,55,95,0.80)";
+          roundRect(ctx, x, y, barW * ratio, barH, 999);
+          ctx.fill();
+        }
+
+        // =========================
+        // DRAW HELPERS
+        // =========================
+        function roundRect(ctx, x, y, w, h, r) {
+          const rr = Math.min(r, w / 2, h / 2);
+          ctx.beginPath();
+          ctx.moveTo(x + rr, y);
+          ctx.arcTo(x + w, y, x + w, y + h, rr);
+          ctx.arcTo(x + w, y + h, x, y + h, rr);
+          ctx.arcTo(x, y + h, x, y, rr);
+          ctx.arcTo(x, y, x + w, y, rr);
+          ctx.closePath();
+        }
+
+        function drawHeart(cx, cy, size, fill, shine) {
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.beginPath();
+          const s = size;
+          ctx.moveTo(0, s * 0.35);
+          ctx.bezierCurveTo(
+            s * 0.9,
+            -s * 0.2,
+            s * 0.8,
+            -s * 1.25,
+            0,
+            -s * 0.65,
+          );
+          ctx.bezierCurveTo(
+            -s * 0.8,
+            -s * 1.25,
+            -s * 0.9,
+            -s * 0.2,
+            0,
+            s * 0.35,
+          );
+          ctx.closePath();
+          ctx.fillStyle = fill;
+          ctx.fill();
+          // highlight
+          ctx.globalAlpha = 0.55;
+          ctx.beginPath();
+          ctx.ellipse(
+            -s * 0.25,
+            -s * 0.35,
+            s * 0.28,
+            s * 0.18,
+            -0.6,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fillStyle = shine;
+          ctx.fill();
+          ctx.restore();
+          ctx.globalAlpha = 1;
+        }
+
+        function drawThorn(x, y, r) {
+          // stylized thorny rose blob
+          ctx.save();
+          ctx.translate(x, y);
+
+          // base
+          ctx.fillStyle = "rgba(255,55,95,0.22)";
+          ctx.beginPath();
+          ctx.arc(0, 0, r + 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          // petals/spikes
+          ctx.fillStyle = "rgba(255,55,95,0.75)";
+          for (let i = 0; i < 8; i++) {
+            const a = i * ((Math.PI * 2) / 8) + elapsed * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * r * 0.35, Math.sin(a) * r * 0.35);
+            ctx.lineTo(
+              Math.cos(a + 0.18) * r * 1.2,
+              Math.sin(a + 0.18) * r * 1.2,
+            );
+            ctx.lineTo(
+              Math.cos(a - 0.18) * r * 1.2,
+              Math.sin(a - 0.18) * r * 1.2,
+            );
+            ctx.closePath();
+            ctx.fill();
+          }
+
+          // center
+          ctx.fillStyle = "rgba(20,10,18,0.65)";
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+
+        // =========================
+        // INITIAL SCREEN
+        // =========================
+        showOverlay(
+          "Ready? 💘",
+          "Collect all hearts before time runs out. Avoid thorny roses — they cost time!",
+          "Start",
+        );
+      })();
+    </script>
+  </body>
 </html>
